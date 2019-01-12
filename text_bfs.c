@@ -74,7 +74,7 @@ chin:
       i=trundle[i];
       usleep(50000);
       z1(_int+34,35);z1(_int+25,1+i/dd,1+i%dd);p0(47);
-    
+      g4(y3);    
     z1(_int+34,33);z1(_int+25,1+s/dd,1+s%dd);p0(95);
     goto tww;
 ten:;
