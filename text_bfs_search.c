@@ -1,70 +1,10 @@
 #include <stdio.h>
 #include <unistd.h>
-typedef struct n{int i; int p;}n;
-typedef struct q{
-  n* h;
-  int l;
-}q;
-q* mkq(int s) {
-  struct q*r=malloc(sizeof(struct q));
-  r->h=malloc(s<<3);
-  r->l=0;
-  return r;
-}
-void nq(q*qq, int i, int p) {
-  qq->h[qq->l].i=i;qq->h[i=qq->l++].p=p;
-  if(i){
-  int j;
-  while (qq->h[i].p<qq->h[j=(i-1)/2].p){
-    //qq->h[j]^=(qq->h[i^=j^=i^=j]^=(qq->h[i^=j^=i^=j]^=qq->h[i^=j^=i^=j]));
-    qq->h[j].p^=(qq->h[i].p^=(qq->h[j].p^=qq->h[i].p));
-    qq->h[j].i^=(qq->h[i].i^=(qq->h[j].i^=qq->h[i].i));
-    i=j;
-  }}
-}
-int poll(q*qq) {
-  int r = qq->h[0].i,a,c,d,z;
-  switch(qq->l--){
-  default:
-    a=0;
-    qq->h[0].p=qq->h[qq->l].p;qq->h[0].i=qq->h[qq->l].i;
-    LLL:;
-    if (a>=qq->l) goto L;
-      d=1+(c=(a<<1)+1);
-      if (c<qq->l) {
-        if(d<qq->l) {
-          if (qq->h[d].p>qq->h[c].p) {z=c;}
-          else {z=d;}
-          if (qq->h[z].p<qq->h[a].p) {
-            goto LL;
-          } else { goto L; }
-        } else{
-          if(qq->h[z=c].p<qq->h[a].p){
-            goto LL;
-          } else { goto L; }
-        }
-      } else {a=c;}
-      goto LLL;
-    LL:;
-      qq->h[z].p^=qq->h[a].p^=qq->h[z].p^=qq->h[a].p;
-      qq->h[z].i^=qq->h[a].i^=qq->h[z].i^=qq->h[a].i;
-      a=z;
-      goto LLL;
-  case 1:
-  L:;
-    return r;
-  case 0:
-    return -1;
-  }
-}
-
-
-
 void readmap(int* width, int* height, int* start, int*end, char** omap) {
   // figure out w and h from the input
   int c = 0;
   *start=*end=-1;
-  char** strs=malloc(8*1000);
+  char** strs=malloc(1000);
   *height=0;
   while(1) {
     char* s = malloc(512);
@@ -77,7 +17,6 @@ void readmap(int* width, int* height, int* start, int*end, char** omap) {
   }
   char* map = malloc(*width * *height);
   for (int i = 0; i < *width**height; i += 1) map[i]=' ';
-  char *buf = map;
   for (int i = 0; i < *height; i++) {
     memcpy(map+i**width, strs[i], strlen(strs[i]));
     for (int w = 0; w<*width;w++)
@@ -120,8 +59,6 @@ char _int[] = {
                0x20
 };
 #define clear() 
-#define setclr(clr) printf(_int+34, clr)
-#define movecursor(x, y) printf(_int+25, y, x)
 // o: [w, h, x, y, n, 1, 2, 3, 4]
 int nbr(char*map, int* out) {
   int x=out[2],y=out[3],w=*out,h=out[1],i=x+y*w;
@@ -135,50 +72,54 @@ __(a,m){
   return (a^m)-m;
 }
 int main() {
+  void*sout=stdout,*sin=stdin;
+  int qql,*qqh,qqf,(*flus)(void*),(*z1)(const char*,...)=&printf,(*pch)(int)=&putchar;
   int c = 0,i;
   int w, h, s, e,pr;
   char *map;
   readmap(&w, &h, &s, &e, &map);
   fflush(stdout);
   int sz = w*h;
-  printf(_int+18);
-  for (int r = 0; r < sz; r++){movecursor(1+ (r%w), 1+r/w);printf("%c", map[r]);}
+  qqh=malloc(sizeof(int)*sz);
+  z1(_int+18);
+  for (int r = 0; r < sz; r++){z1(_int+25,1+ (r/w), 1+r%w);pch(map[r]);}
   int nbrs[10];
-  q* qq = mkq(sz);
   int* trail=malloc(sizeof(int)*sz);
-  int* vmap=malloc(sizeof(int)*sz),*nqd=malloc(sizeof(int)*sz),*dmap=malloc(sizeof(int)*sz);
+  int* vmap=malloc(sizeof(int)*sz),*nqd=malloc(sizeof(int)*sz);
   trail[s] = 0;
-  nq(qq, s, 0);
-
-  while ((c=poll(qq))!=-1) {
+  qqh[0]=s;
+  qqf=1;qql=0;
+  st:;
+  if(qql==qqf)goto end;
+  c=qqh[qql++];
+  //while ((c=poll(qq))!=-1) {
     nbrs[0]=w;nbrs[1]=h;nbrs[2]=c%w;nbrs[3]=c/w;nbrs[4]=0;
     nbr(map, nbrs);
-    if (c&1?nqd[c]:vmap[c]) continue;
+    if (c&1?nqd[c]:vmap[c]) goto st;
     while (nbrs[4]-->0){
       i=nbrs[5+nbrs[4]];
       if ((i&1?vmap[i]:nqd[i]) == 0) {
         trail[i]=c;
-        usleep(10000);
-        printf(_int+34, _int[67]);printf(_int+25,1+i/w, 1+i%w);printf("+", map[i]);
+        usleep(100000);
+        fflush(stdout);
+	z1(_int+34, _int[67]);z1(_int+25,1+i/w, 1+i%w);putchar(88);
         if (i==e)goto z;
         i&1?(vmap[i]=1):(nqd[i]=1);
-        dmap[i]=dmap[c]+1;
-        pr= (__(i/w-e/w,4) + __(i%w-e%w,6))*2/3 + dmap[i];
-        dmap[i]=pr;
-        nq(qq, i,  pr);
+        qqh[qqf++]=i;
       }
     }
     c&1?(nqd[c]=1):(vmap[c]=1);
-    continue;
+    goto st;
   z:;
-    setclr(36);printf(_int+25,1+e/w,1+e%w);printf("!",map[s]);
+   z1(_int+34,36);z1(_int+25,1+e/w,1+e%w);putchar(33);
     while (trail[i]!=s) {
       i=trail[i];
       usleep(10000);
-      setclr(35);printf(_int+25,1+i/w,1+i%w);printf("/",map[i]);
+      z1(_int+34,35);z1(_int+25,1+i/w,1+i%w);putchar(47);
     }
-    setclr(33);printf(_int+25,1+s/w,1+s%w);printf("_",map[s]);
-    break;
-  }
-  movecursor(1, h+3);
+    z1(_int+34,33);z1(_int+25,1+s/w,1+s%w);putchar(95);
+    goto end;
+end:;
+  z1(_int+25, h+3, 1);
+  fflush(stdout);
 }
