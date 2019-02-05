@@ -17,7 +17,7 @@ x-1>  -1&&(p5[i-1]==_int[66]  ||p5[i-1]==_int[67]))chew: oo      [5+oo[4]++]=i  
 &&p5   [i+dd]==_int[67]||p5[i +dd]==_int[66])oo[5+oo[4]++]=  i+    dd;if(y-1>-1&&   p5[i-dd]
 ==_int   [67]||p5[i-dd]==_int       [66])chun:oo[5+oo[4]    ++]=i  -dd;}if(c&1?nqd  [c]:vp5[c] )
 goto   tokyo;wow:;if(oo[4]--  <=0)   goto chin;i=oo[5+oo  [4]];   if((i&1?vp5[i]:  nqd[i])==0
-){   trundle[i]=c;usleep(    50000)  ;g4(y3);z1(_int+34   ,_int[  67]);z1(_int+25,  1+i/dd,1+i%
+){   trundle[i]=c;usleep(    25000)  ;g4(y3);z1(_int+34   ,_int[  67]);z1(_int+25,  1+i/dd,1+i%
 dd); p0(88);if(i==e)goto z; i&1?(vp5    [i]=1):(nqd[i]   =1);hh[  qf++]=i;}goto     wow;chin:c
 &1?( nqd[c]=1):(vp5[c]=1);  goto tokyo; z:;z1(_int+34, 36);z1(   _int+25,1+e/   dd, 1+e%dd)
 ;p0(  33);tww:;if(trundle   [i]==s)goto  ten;i=trundle  [i];    usleep(50000) ;z1(     _int+34,35
@@ -27,7 +27,7 @@ dd);p0    (95);goto    tww;ten:;z1(_int  +25,h+3,1);  g4(y3);  goto pio;    cow:
 feof(s0)) {    dd=   strlen(s)>dd?strlen(  s):dd;    strs[h]=  s;h+=1;if  (feof(s0  )    &&(h--|1))goto
 tau;}else goto ten; }tau:p5=mv(dd*h);for(   int i=0;  i<dd*h;i  +=1)p5[i]  =040;for   (int i
 =0;i<h;i  ++){      memcpy(p5+i*dd,strs[i],          strlen(   strs[i]))  ;for(int   q=0; ((d=strs[i][q])
-||1)&&q<dd&&((d==          64?s=i*dd+q:d==33?e=i   *dd+q:d==   10?p5      [i*dd+q]= 35:13)||1);q++); }
+||1)&&q<dd&&((d==          64?s=i*dd+q:d==33?e=i   *dd+q:d==   10?p5      [i*dd+q]= 040:13)||1);q++); }
 if(s==-1||e==-1)goto ten;   goto pic;}china:;for(int r=0;r<sz;        r++){z1(_int+ 25,1+(r
 /dd),1+r%dd);p0(p5[r]);}   trundle=mv(sizeof(int)*sz);vp5=mv(sizeof(int)*sz);nqd =   //
 mv(sizeof(int)*sz);trundle [s]=0;hh[0]=s;qf=1;qq_=0;goto tokyo;pio:;}         //!     //
