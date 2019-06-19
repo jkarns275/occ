@@ -1,227 +1,34 @@
-#include <stdio.h>
-#include <signal.h>
-#include <sys/types.h>
-
-char _int[] = {
-  // "%c" = 0
-  37, 99, 0,
-  // "\n" = 3
-  10, 0,
-  // "G   o    o    d    b   y    e    _   :   -   )   \n" = 5
-      71, 111, 111, 100, 98, 121, 101, 32, 58, 45, 41, 10, 0,
-  // "\033 [   H   \033 [   J" = 18
-      27,  91, 72, 27, 91, 74, 0,
-  // "\033 [   %   d    ;   %   d    H" = 25
-      27,  91, 37, 100, 59, 37, 100, 72, 0,
-  // "\033 [   %   d    m    %   s" = 34
-      27,  91, 37, 100, 109, 37, 115, 0,
-  // "┃" = 42
-  -30, -108, -125, 0,
-  // "━" = 46
-  -30, -108, -127, 0,
-  // "┓" = 50
-  -30, -108, -109, 0,
-  // "┏" = 54
-  -30, -108, -113, 0,
-  // "┛" = 58
-  -30, -108, -101, 0,
-  // "┗" = 62
-  -30, -108, -105, 0
-};
-#define clearscreen() printf(&_int[18])
-#define movecursor(x, y) printf(&_int[25], y, x)
-#define printcoloredstr(ch, color) printf(&_int[34], color, ch)
-#define randbool() (rand()&1)
-int ROWS = 24;
-int COLS = 80;
-
-#define BACKGROUNDCOLORS 0
-
-#define WHITE 37+BACKGROUNDCOLORS
-#define CYAN 36+BACKGROUNDCOLORS
-#define MAGENTA 35+BACKGROUNDCOLORS
-#define BLUE 34+BACKGROUNDCOLORS
-#define YELLOW 33+BACKGROUNDCOLORS
-#define GREEN 32+BACKGROUNDCOLORS
-#define RED 31+BACKGROUNDCOLORS
-
-#define U 0
-#define R 1
-#define D 2
-#define L 3
-
-
-/*
-  0 -> UP/DOWN => UP/DOWN
-  1 -> LEFT/RIGHT => LEFT/RIGHT
-  2 -> UP/RIGHT => LEFT/DOWN
-  3 -> UP/LEFT => RIGHT/DOWN
-  4 -> DOWN/LEFT => LEFT/UP
-  5 -> DOWN/RIGHT => RIGHT/UP
- */
-//char* charSets[] = { { 191, 0 }, "-", "\\", "/", "/", "\\"};
-char* charSets[] = {&_int[42], &_int[46], &_int[50], &_int[54], &_int[58], &_int[62]};
-int charset = 0;
-int nPipes = 2;
-int colorMode = 0;
-
-int getColor() {
-  return 31 + (rand() % 7);
-}
-
-#define X_IND 0
-#define Y_IND 1
-#define COLOR_IND 2
-#define TRACK_IND 3
-#define DIR_IND 4
-#define LDIR_IND 5
-#define TURNS_IND 6
-#define ROWS_IND 7
-#define COLS_IND 8
-
-typedef struct Pipe {
-  int x, y, color, track;
-  int direction, lastDirection;
-} Pipe;
-
-int resetPipe(int p[]) {
-  if (randbool()) {
-    if (randbool()) {
-      p[Y_IND] = 0;
-      p[DIR_IND] = D;
-    } else {
-      p[Y_IND] = p[ROWS_IND];
-      p[DIR_IND] = U;
-    }
-    p[X_IND] = rand() % (p[COLS_IND]-1);
-  } else {
-    if (randbool()) {
-      p[X_IND] = 0;
-      p[DIR_IND] = R;
-    } else {
-      p[X_IND] = p[COLS_IND];
-      p[DIR_IND] = L;
-    }
-    p[Y_IND] = rand() % (p[ROWS_IND]-1);
-  }
-  p[LDIR_IND] = p[DIR_IND];
-  p[TRACK_IND] = 2 + (rand() % 5);
-  p[COLOR_IND] = getColor();
-  return 1;
-}
-
-void turnPipe(int p[]) {
-  p[TURNS_IND]--;
-  p[LDIR_IND] = p[DIR_IND];
-  if ((rand() & 3) == 0) {
-    switch(p[DIR_IND]) {
-    case U:
-    case D:
-      if (randbool()) p[DIR_IND] = L;
-      else if (randbool()) p[DIR_IND] = R;
-      break;
-    case L:
-    case R:
-      if (randbool()) p[DIR_IND] = U;
-      else if (randbool()) p[DIR_IND] = D;
-    }
-  }
-  p[TRACK_IND] = 2 + (rand() % 8);
-}
-
-/*
-  0 -> UP/DOWN => UP/DOWN
-  1 -> LEFT/RIGHT => LEFT/RIGHT
-  2 -> UP/RIGHT => LEFT/DOWN
-  3 -> UP/LEFT => RIGHT/DOWN
-  4 -> DOWN/LEFT => LEFT/UP
-  5 -> DOWN/RIGHT => RIGHT/UP
-*/
-void printPipe(int p[]) {
-  // U R D L
-  // 0 1 2 3
-  static const int map[][4] = {  {0, 3, 0, 2},
-                                 {4, 1, 2, 1},
-                                 {0, 5, 0, 4},
-                                 {5, 1, 3, 1} };
-  char* c = charSets[map[p[LDIR_IND]][p[DIR_IND]]];
-  movecursor(p[X_IND], p[Y_IND]);
-  printcoloredstr(c, p[COLOR_IND]);
-  p[LDIR_IND] = p[DIR_IND];
-}
-
-int updatePipe(int p[], int* ts) {
-  *ts-=1;
-  if (*ts <= 0) {
-    *ts = 0;
-  }
-  p[TRACK_IND]--;
-  if (p[TRACK_IND] <= 0) {
-    turnPipe(p);
-  } else {
-    switch(p[DIR_IND]) {
-    case U:
-      p[Y_IND] -= 1;
-      break;
-    case D:
-      p[Y_IND] += 1;
-      break;
-    case L:
-      p[X_IND] -= 1;
-      break;
-    case R:
-      p[X_IND] += 1;
-    }
-    if (p[X_IND] <= 0 | p[X_IND] >= p[COLS_IND] |
-        p[Y_IND] <= 0 | p[Y_IND] >= p[ROWS_IND]) {
-      resetPipe(p);
-    }
-  }
-  printPipe(p);
-  return 1;
-}
-
-int main(int argc, char** args) {
-
-
-  int pipe[28];
-  pipe[27]=0;
-  while (pipe[27] < 21 && resetPipe(&pipe[pipe[27]]) && (pipe[27]+=9));
-  pipe[ROWS_IND] = argc > 1 ? atoi(args[1]) : 24;
-  pipe[COLS_IND] = argc > 2 ? atoi(args[1]) : 80;
-  pipe[9+ROWS_IND]=pipe[18+ROWS_IND]=pipe[ROWS_IND];
-  pipe[9+COLS_IND]=pipe[18+COLS_IND]=pipe[COLS_IND];
-  pid_t pid = fork();
-
-  if (pid) {
-    char _unused;
-    scanf(_int, &_unused);
-    kill(pid, SIGKILL);
-    clearscreen();
-    printcoloredstr(&_int[3], 39);
-    printf(&_int[5]);
-  } else {
-    srand(time(NULL));
-    struct timeval _1, _2;
-    struct timespec t1 = {.tv_sec = 0, .tv_nsec = 1000000000 / 35 }, t2;
-    int tn = 1000000000 / 35, p = (pipe[ROWS_IND]+pipe[COLS_IND])*40;
-    clearscreen();
-    while (1) {
-      gettimeofday(&_1, 0);
-      pipe[27]^=pipe[27];
-      while (pipe[27] < 21 && updatePipe(&pipe[pipe[27]++], &p) && (pipe[27]+=8));
-      if (p==0) {
-        pipe[27]^=pipe[27];
-        while (pipe[27] < 21 && resetPipe(&pipe[pipe[27]]) && (pipe[27]+=9));
-        clearscreen();
-        p=(pipe[ROWS_IND]+pipe[COLS_IND])*40;
-      }
-      movecursor(0, 0);
-      fflush(stdout);
-      gettimeofday(&_2, 0);
-      t1.tv_nsec = tn - (_2.tv_usec-_1.tv_usec) * 1000;
-      fflush(stdout);
-      nanosleep(&t1, &t2);
-    }
-  }
-}
+#include<stdio.h>
+#include<stdlib.h>
+#include<unistd.h>
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+//@                                                                             //
+char _int[]={37,99,0,10,0,71,111,111,100,98,121,101,32,58,45,41,10,0,27,     91,72,27
+,91,  74,0,27,91,37,100,59,37,100,72,0,27,91,37,100,109,0,0,0,-30,-108,-125,  0,-30,
+-108, -127,0,-30,-108,-109,0,-30,-108,-113,0,-30,-108,-101,0,-30,-108,-105,  0,33,
+0x20,  0,27,56,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  0,0,0,
+0,0};   main(){goto paste;stdlib:;goto peon;paste:;void*y3=stdout,*s0=stdin,   *(*mv)(//////
+size_t  )=&malloc;int qq_,*hh,qf,(*g4)(void*)=&fflush,(*z1)(const char*,...)=             //
+&printf  ,(*p0)(int)=&putchar,c=0,i,dd,sz,h,s,e,pr,*trundle,*vp5,*nqd,oo[10];char*        // 
+p5;goto cow;pic:g4(y3);sz=dd*h;hh=mv(sizeof(int)*sz);z1(_int+18);goto china;              //
+tokyo:;     if(qq_==qf)goto ten;c=hh[         qq_++];oo[0]=dd;oo[1]=h;oo[2]=  c%dd;oo[3]=c/dd;oo
+[4]=0;{int x=oo[2],y=oo[3],dd=*oo,h   =oo[1],  i=x+y*dd;if(x+1<dd&&(p5[i+1]== 32||p5[i
++1]==33))       oo[5+oo[4]++]=i+1;  if (x-1>-1  &&(p5[i-1]==_int[66]||p5[i-1]  ==_int[67]))
+chew:oo[5  +  oo[4]++]=i-1;if(y+1<  h&&p5[i+dd]   ==_int[67]||p5[i+dd]==_int[   66])oo[5+oo[
+4]++]=i+  dd;    if(y-1>-1&&p5[i-  dd]==_int[67]  ||p5[i-dd]==_int[66])chun:oo[ 5+oo[4]++]=
+i-dd;}if  (c&1?    nqd[c]:vp5[c]  )goto tokyo;    wow:;if(oo[4]--<=0)goto chin;   i=oo[5+oo[4]]
+;if((i&  1?vp5[i]:  nqd[i])==       0){trundle[i]  =c;usleep(25000);g4(y3);z1(      _int+34,_int[67
+]);z1(  _int+25,1+i  /dd,1+i   %dd)   ;p0(88);if(i ==e)goto z;i&1?(vp5[i]=1):(nqd[   i]=1);hh[
+qf++]=i  ;}goto wow; chin:   c&1?(nqd  [c]=1):(vp5 [c]=1);goto tokyo;z:;z1(_int+34,   36);z1
+(_int+25 ,1+e/dd,1+e  %dd)  ;p0(33);     tww:;if(  trundle[i]==s)goto ten;i=           trundle[i];
+usleep(   50000);z1(        _int+34,35);  z1(_int+ 25,1+i/dd,1+i%dd);p0(47); g4(y3);z1  (_int+34,
+33);z1(  _int+25,1+s/  dd,   1+s%dd);p0(  95);goto tww;ten:;z1(_int+25,h+3,  1);g4(y3)    ;goto
+pio;      cow:;{int    c=0;  s=e=-1;char   **strs= mv(1000),d;h=0;for(;h<   1000;){char*s  =mv(512);
+if(fgets (s,512,s0)|| feof(  s0)){dd=       strlen (s)>dd?strlen(s):dd;   strs[h]=s;h+=1; if(
+feof(s0)  &&(h--|1)    )goto  tau;}else goto ten;}     tau:p5=mv(dd*h)  ;for(int i=0;i<dd *h;i+=
+1)p5[i]=    040;      for(int i=0;i<h;  i++){memcpy   (p5   +i*dd,strs[ i],strlen (strs[i ]));for(int
+q=0;((d=     strs  [i][q])||1 )&&q<dd  &&((d==64?s=  i*dd+q:d==33?e=i   *dd+q:d==10 ?p5[i *dd+q]=
+040:13)||1);      q++);}if(s   ==-1   ||e==-1)goto  ten;goto pic;}china :;for(int r=0;r<  sz;r
+++){z1(_int+25,1+(r/dd),1+r%         dd);p0(p5[r])  ;}trundle=mv(       sizeof(int)*sz)  ;vp5=mv(  //
+sizeof(int)*sz);nqd=mv(sizeof(int)*sz);trundle[s]=  0;hh[0]=s;qf   =1;qq_=0;goto             //
+tokyo;pio:;/*!                                                   */goto stdlib;peon:z1(_int+69);}
