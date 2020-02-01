@@ -4,10 +4,10 @@
 #define m malloc
 
 void display(int nrows, int ncols, char** target, char c) {
-    printf("\033[%d;%dH", 0, 0);
+    printf("\033[%d;%dH", 1, 1);
     for (int row = 0; row < nrows; row += 1) {
         for (int col = 0; col < ncols; col += 1) {
-            if ((c=target[row][col]) && c != '\n');
+            if ((c=target[row][col])&&isprint(c));
             else c=' ';
             p(c);
         }
@@ -19,6 +19,16 @@ void display(int nrows, int ncols, char** target, char c) {
 #define DEC_A 1
 #define ZERO_A 2
 #define ZERO_B 3
+
+char charset[256];
+
+char random_char() {
+    char c;
+start:;
+    while (!isprint(c=rand()));
+    if (!charset[c]) goto start;
+    return c;
+}
 
 typedef struct __gene {
     int a[2];
@@ -32,7 +42,7 @@ Gene make_gene(int nrows, int ncols) {
     g.a[1]=rand()%ncols;
     g.b[0]=rand()%nrows;
     g.b[1]=rand()%ncols;
-    g.action=rand() & 0xFF;
+    g.action=random_char();
     return g;
 }
 
@@ -47,9 +57,16 @@ void crossover_gene(Gene* dst, Gene* p1, Gene* p2, int chromosome_len) {
     for (int i = 0; i < chromosome_len; i += 1)
         dst[i] = i < chromosome_len / 2 ? p1[i] : p2[i];
 }
-#define NMUTATIONS 14
-void mutate(Genome* genome, int nrows, int ncols) {
-    for (int i = 0; i < NMUTATIONS; i += 1) {
+void gncpy(Genome* dst, Genome* src) {
+    for (int c = 0; c < dst->nchromosomes; c++)
+        crossover_gene(dst->genes[c], src->genes[c], src->genes[c], dst->chromosome_len);
+}
+
+#define MAX_NMUTATIONS 1
+void mutate(Genome* genome, double worst_fitness, int nrows, int ncols) { 
+    
+    int n = 1;
+    for (int i = 0; i < n; i += 1) {
         int chr = rand() % genome->nchromosomes;
         int gen = rand() % genome->chromosome_len;
         genome->genes[chr][gen] = make_gene(nrows, ncols);
@@ -64,11 +81,9 @@ void crossover(Genome* child_dst, Genome** candidate_parents, int n_candidates) 
         crossover_gene(child_dst->genes[c], candidate_parents[i]->genes[c], candidate_parents[i]->genes[c], child_dst->chromosome_len);
 }
 
-
-
 Genome* make_genome(int nrows, int ncols) {
     Genome* g = m(sizeof(Genome));
-    g->nchromosomes = nrows;
+    g->nchromosomes = 4;
     g->chromosome_len = nrows * ncols;
     g->genes = m(sizeof(Gene*)*g->nchromosomes);
     for (int i = 0; i < g->nchromosomes; i++) {
@@ -82,13 +97,19 @@ Genome* make_genome(int nrows, int ncols) {
 
 double fitness(char** target, char** y, int nrows, int ncols) {
     // Mean squared error
-    double divisor = (double) nrows * ncols;
     double mse = 0.0;
     for (int row = 0; row < nrows; row++)
         for (int col = 0; col < ncols; col++) {
-            double x = ((double)target[row][col]) - ((double)y[row][col]);
-            x *= x;
-            mse += (x / divisor);
+            x:;
+            if (isprint(target[row][col])) {
+                double x = (double) (target[row][col] != y[row][col]);
+                if (target[row][col] == ' ')
+                    x *= 10;
+                mse += x;
+	            continue;
+            } else
+                target[row][col] = ' ';
+            goto x;
         }
     return mse;
 }
@@ -138,20 +159,25 @@ int map_sum(char** c, int nrows, int ncols) {
     return sum;
 }
 
-#define POPSIZE 16
+#define POPSIZE 128
+#define PARENT_FRAC 8
 
 int main(int argn, char** argv) {
+    memset(charset, 0, 256);
+    
     int nrows = atoi(argv[1]);
     int ncols = atoi(argv[2]);
 
-    char* target[nrows];
+    char** target = make_map(nrows, ncols);
+    char** bad = make_map(nrows, ncols);
     for (int i = 0; i < nrows; i += 1) {
-        char* line = malloc(ncols + 2);
-        memset(line, 0, ncols + 2);
-        fgets(line, ncols + 2, stdin);
-        printf("%s", line);
-        target[i] = line;
+        fgets(target[i], ncols + 2, stdin);
+        printf("%s", target[i]);
+        for (int j = 0; j < ncols; j += 1)
+            charset[target[i][j]] = 1;
     }
+    
+    double worst_fitness = fitness(target, bad, nrows, ncols);
 
     Genome** population = m(sizeof(Genome*) * POPSIZE);
     char*** maps = m(sizeof(char**) * POPSIZE);
@@ -159,6 +185,8 @@ int main(int argn, char** argv) {
         population[i] = make_genome(nrows, ncols);
         population[i]->map = make_map(nrows, ncols);
     }
+    
+    system("clear");
 
     int iter = 0;
     while (1){
@@ -168,14 +196,20 @@ int main(int argn, char** argv) {
             population[i]->fitness = fitness(target, population[i]->map, nrows, ncols);
         }
         qsort(population, POPSIZE, sizeof(Genome*), compFitness);
-        for (int i = POPSIZE / 2; i < POPSIZE; i += 1)
-            crossover(population[i], population, POPSIZE / 2);
-        for (int i = 0; i < POPSIZE; i += 1) {
-            mutate(population[i], nrows, ncols);
-        }
-        
+        for (int i = 0; i < POPSIZE; i += 1)
+            if (i >= POPSIZE / PARENT_FRAC) {
+                if (rand() & 1)
+                    crossover(population[i], population, POPSIZE / PARENT_FRAC);
+                else {
+                    int parent_idx = rand() % (POPSIZE/PARENT_FRAC);
+                    //gncpy(population[i], population[parent_idx]);
+                    mutate(population[i], worst_fitness, nrows, ncols);
+                }
+            } else {
+                mutate(population[i], worst_fitness, nrows, ncols);
+            }
         //printf("best map sum: %d\n", map_sum(population[0]->map, nrows, ncols));
-        //printf("Best fitness: %f; iter %d\n", population[0]->fitness, iter++);
+        printf("\n\nBest fitness: %f; iter %d\n", population[0]->fitness, iter++);
         display(nrows, ncols, population[0]->map, nrows * ncols);
     }
 
