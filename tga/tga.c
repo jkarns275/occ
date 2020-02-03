@@ -5,12 +5,12 @@
 
 #define idx(row, col) (row * ncols) + col
 
-void display(int nrows, int ncols, char* target, char c) {
+void display(int nrows, int ncols, char* best, char c) {
     printf("\033[%d;%dH", 1, 1);
     for (int i = 0; i < nrows * ncols; i += 1) {
-        if ((c=target[i]&&isprint(c)));
+        if ((c=best[i]&&isprint(c)));
         else c=' ';
-        putchar(target[i]);
+        putchar(best[i]);
         //p(c);
         if(i%ncols==(ncols - 1)) p('\n');
     }
@@ -83,7 +83,7 @@ void crossover(Genome* child_dst, Genome** candidate_parents, int n_candidates) 
 
 Genome* make_genome(int nrows, int ncols) {
     Genome* g = m(sizeof(Genome));
-    g->nchromosomes = 4;
+    g->nchromosomes = 1;
     g->chromosome_len = nrows * ncols;
     int ngenes = g->nchromosomes * g->chromosome_len;
     g->genes = m(sizeof(Gene)*ngenes);
@@ -215,7 +215,17 @@ int main(int argn, char** argv) {
             }
 
         if (iter++ % 10 == 0) {
-            display(nrows, ncols, population[0]->map, nrows * ncols);
+            char*best=population[0]->map,c;
+            printf("\033[%d;%dH", 1, 1);
+            for (int i = 0; i < nrows * ncols; i += 1) {
+                if ((c=best[i]&&isprint(c)));
+                else c=' ';
+                putchar(best[i]);
+                //p(c);
+                if(i%ncols==(ncols - 1)) p('\n');
+            }
+
+            // display(nrows, ncols, population[0]->map, nrows * ncols);
             printf("\n\nBest fitness: %f; iter %d \t\t\t\n", population[0]->fitness, iter);
         }
         //printf("%s\n", population[0]->map);
