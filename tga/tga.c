@@ -201,16 +201,12 @@ int main(int argn, char** argv) {
             population[i]->fitness = fitness(target, population[i]->map, nrows, ncols);
         }
         qsort(population, POPSIZE, sizeof(Genome*), compFitness);
-        for (int i = 0; i < POPSIZE; i += 1)
-            if (i >= POPSIZE / PARENT_FRAC) {
-                if (rand() & 1)
-                    crossover(population[i], population, POPSIZE / PARENT_FRAC);
-                else {
-                    int parent_idx = rand() % (POPSIZE/PARENT_FRAC);
-                    //gncpy(population[i], population[parent_idx]);
-                    mutate(population[i], nrows, ncols);
-                }
-            } else {
+        for (int i = POPSIZE / PARENT_FRAC; i < POPSIZE; i += 1)
+            if (rand() & 1)
+                crossover(population[i], population, POPSIZE / PARENT_FRAC);
+            else {
+                int parent_idx = rand() % (POPSIZE/PARENT_FRAC);
+                //gncpy(population[i], population[parent_idx]);
                 mutate(population[i], nrows, ncols);
             }
 
