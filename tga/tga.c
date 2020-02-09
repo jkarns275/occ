@@ -8,11 +8,11 @@
 void display(int nrows, int ncols, char* best, char c) {
     printf("\033[%d;%dH", 1, 1);
     for (int i = 0; i < nrows * ncols; i += 1) {
-        if ((c=best[i]&&isprint(c)));
+        if ((c=best[i]&&c!='\t'&&isprint(c)));
         else c=' ';
         putchar(best[i]);
         //p(c);
-        if(i%ncols==(ncols - 1)) p('\n');
+        if(i%ncols==(ncols - 1)) {p('\t'); p('|');p('\n');}
     }
     /*    for (int col = 0; col < ncols; col += 1) {
             if ((c=target[idx(row, col)])&&isprint(c));
@@ -214,11 +214,10 @@ int main(int argn, char** argv) {
             char*best=population[0]->map,c;
             printf("\033[%d;%dH", 1, 1);
             for (int i = 0; i < nrows * ncols; i += 1) {
-                if ((c=best[i]&&isprint(c)));
-                else c=' ';
-                putchar(best[i]);
-                //p(c);
-                if(i%ncols==(ncols - 1)) p('\n');
+                c=best[i];
+                if (isprint(c) == 0) c = ' ';
+                putchar(c);
+                if(i%ncols==(ncols - 1)) printf("\t|\n");
             }
 
             // display(nrows, ncols, population[0]->map, nrows * ncols);
