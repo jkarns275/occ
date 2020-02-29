@@ -29,13 +29,22 @@ void display(int nrows, int ncols, char* best, char c) {
 #define ZERO_B 3
 
 char charset[256];
-
+char charset_seq[256];
+int charset_len = -1;
 char random_char() {
-    char c;
-start:;
-    while (!isprint(c=rand()));
-    if (!charset[c]) goto start;
-    return c;
+// lbl:;
+//     int x;
+//     if (charset[x=rand()&0xFF]) return x;
+//     goto lbl;
+    if (charset_len==-1) {
+        charset_len = 0;
+        for (int i = 0; i < 257; i += 1) {
+            if (charset[i]) {
+                charset_seq[charset_len++] = i;
+            }
+        }
+    }
+    return charset_seq[rand() % charset_len];
 }
 
 typedef struct __gene {
@@ -68,7 +77,17 @@ void gncpy(Genome* dst, Genome* src) {
 
 void mutate(Genome* genome, int nrows, int ncols) { 
     int gene = rand() % (genome->nchromosomes * genome->chromosome_len);
-    genome->genes[gene] = make_gene(nrows * ncols);
+    // Replace
+    int x = rand();
+    if (x&1) {
+        if (x&2)
+            genome->genes[gene].a=rand()%(nrows*ncols);
+        else
+            genome->genes[gene].b=rand()%(nrows*ncols);
+    // Flip
+    } else {
+        genome->genes[gene].action = random_char();
+    }
 }
 
 void crossover(Genome* child_dst, Genome** candidate_parents, int n_candidates) {
@@ -210,7 +229,7 @@ int main(int argn, char** argv) {
                 mutate(population[i], nrows, ncols);
             }
 
-        if (iter++ % 10 == 0) {
+        if (iter++ % 1000 == 0) {
             char*best=population[0]->map,c;
             printf("\033[%d;%dH", 1, 1);
             for (int i = 0; i < nrows * ncols; i += 1) {
