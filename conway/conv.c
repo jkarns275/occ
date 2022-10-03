@@ -8,18 +8,61 @@ long long op[][32] = {
 { -3830120369918836531, -6016016492398343770, -2543820355150618957, -2158519753056713926, -1881172157569331057, -7666744224773783834, -4495834414709313344, 2018200285996995148, 5578912301471311906, 5644350214590911346, 3503331513761083257, 2618312331705133603, 4768226916359942699, -7469373568190958834, 1752215978860846971, 7945230559414143527, 1244523210340997451, 4401437662998893060, -4786365902114767257, -8679455487738158493, 3927615540674649527, 9176652918688865195, -5716603370273415004, 9125358142364169935, -4143977047845807666 },
 { -4191821234025004950, -6738010824921742175, -3989205420185496407, -3959402237761288907, -2614667578268996987, -8754656091029068319, -5220649015783760719, 1298181711861004600, 7439450795071509523, 4919546609486358591, 2421087544215739247, 2256611446039912473, 7876876231902375206 }
 };
-int main() {
-    for (int i = 0; i < 6; i++) {
-        int j = 0;
-        while (op[i][j]) {
-            for (int k = 0; k < 8; k++) {
-                unsigned char c = ((unsigned char *)&op[i][j++])[k];
-                if (c >= 0x20 && c <= 0x7e)
-                  printf("<%c>", ((unsigned char *) &op[i][j++])[k]);
-                else
-                  printf("\\x%.2hhx", c);
-            }
-        }
-        printf("\n");
+char *x[] = {
+  "=]===D$<;:ù9876Î5432£10/.x-,+*)('&%=M",
+  " J   UVzy{Ÿ ÄÃÂÁ€Å-éèçæå¥¤ÊÉÈ«ËïîíìĞÏõô      ",
+  "!d!!!äŞÀº´›œ¹–Š³®wx•rlf`‰„pqke_ˆƒjd^RS/TNHB<-6Zc]LMGA;5YEF@:4>!!!!!!!",
+  "ç%çççıé\x03\x09\x0f^Xƒ93‚R}¨]-W|§'¦Q{¥!êKuŸòÉÊ Ëv¡ÌLw¢ÍÃ™oÄE½šÅ“içççççççççç",
+  " í   ñÍøêÆ©Ô÷ÿğ¢ÌÓşö~ı¨ÒüZ#„®Ø…+\x02¯°ÙÚ\x03Û\x04\x05\x06Ş´Šß`ºµàf–‹¶»álr‘¼—6\x22<BHa*NgŒm’s·˜½âtn™OIh“u¾PCJošQ=vDKR7&>ELb.Sip”w¸›¿ãMF?q8Gj•@9Ack¹:;de1$234\x5c,5]‡^ˆ_²‰³İƒ‚­YX¬§×}W|¦Ñ¡VË{ ÅU%zŸÄ€-é¥«ÊĞïÖõû\x01èÃîyçÉôÂæ         ",
+  "!‹!!!íÉôæÂ¥îĞûçÃÊõèzïŸÄéV&{ Å.ê¦Ë¬ğÑö×ü\x02Æ¡|ÌW¢§Ò}X~‚¨­ØYZƒ®„2%345]-6^_ˆ`‰Š³´Şfe<;dlºB:Ak–H9r@GNc/Tjq!!!!!!"
+};
+int main(int argc, char **argv) {
+  for (int i = 0; i < 5; i++) {
+    unsigned char *cc = (unsigned char *) &op[i][0];
+    int len = 4 + *(int *) cc;
+    unsigned char *bb = (unsigned char *) &x[i][0];
+    unsigned char shift = *bb;
+    for (int j = 0; j < 8; j++)
+      printf("%x", bb[j]);
+    printf(" %d\n", *(unsigned char*)bb);
+    continue;
+    bb++;
+    int len2 = *(int *) bb;
+    unsigned char *lc = (unsigned char *) &len2;
+    for (int j = 0; j < 4; j++)
+      lc[j] = (lc[j] - shift) & 0xFF;
+    len2 += 4;
+
+    printf("%d %d %d\n", len == len2, len, len2);
+
+    printf("%d\n", len);
+    unsigned char delt = 256 - shift;
+    for (int k = 4; k < len; k++) {
+      if (((bb[k] - shift) & 0xFF) != cc[k])
+        printf("hmm %u %u %u %u\n", shift, bb[k],(bb[k] - shift) & 0xFF, cc[k]);
     }
+    printf("\n\n");
+
+  }
+  // for (int i = 0; i < 6; i++) {
+  //   unsigned char *cc = (unsigned char *) &op[i][0];
+  //   int len = 4 + *(int *) cc;
+  //   printf("len = %d\n", len);
+
+  //   std::string shortest;
+  //   for (int j = 0; j < 256; j++) {
+  //     std::string s = "";
+  //     for (int k = -1; k < len; k++) {
+  //       unsigned int c = k == -1 ? (unsigned) j : (cc[k] + j) % 256;
+  //       if (c >= 0x20 && c != 127 && c != '\\' && c != '"')
+  //         s.push_back(c);
+  //       else
+  //         s += fmt::format("\\x{0:02x}", c);
+  //     }
+  //     s += "";
+  //     if (shortest.size() == 0 || shortest.size() > s.size())
+  //       shortest = s;
+  //   }
+  //   printf("\"%s\"\n", shortest.c_str());
+  // }
 }

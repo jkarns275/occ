@@ -561,7 +561,7 @@ std::string shortest_repr(int len, unsigned char *c) {
     std::string s;
     ch2str(i, s);
     unsigned char le = (unsigned char) i;
-    ch2str((le + (unsigned char) i) & 0xFF, s);
+    ch2str((len + (unsigned char) i) & 0xFF, s);
     for (int j = 0; j < len; j++)
       ch2str(0xFF & (c[j] + (unsigned char) i), s);
     if (s.size() < shortest_repr.size() || shortest_repr.size() == 0){
@@ -578,7 +578,6 @@ int main() {
   pal.emplace_back(sizeof(bluescale), bluescale);
   pal.emplace_back(sizeof(redscale), redscale);
   pal.emplace_back(sizeof(yellowscale), yellowscale);
-
 
   fmt::print("char op[][] = {{");
   for (auto &a : pal)
